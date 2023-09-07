@@ -1,0 +1,147 @@
+!pip install mtcnn
+!pip install tensorflow
+import cv2 as cv
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+# reading the image
+img = cv.imread("/content/drive/MyDrive/745e0beb-af30-4b8d-b187-
+4a22e79d760c.jpg")
+# visualizing the image in the matplotlib
+img = cv.cvtColor(img , cv.COLOR_BGR2RGB)
+plt.imshow(img)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from mtcnn.mtcnn import MTCNN
+#Object of the mtcnn
+detector = MTCNN()
+results = detector.detect_faces(img)
+# we are only concerned with the box that will give the co-ordinates of the face
+in the image
+results
+x,y,w,h = results[0]['box']
+#drawing the rectangle inside the face
+img = cv.rectangle(img ,(x,y) , (x+w , y+h),(0,0,255),30)
+plt.imshow(img)
+# extract only the face portion
+# facenet only use 160x160 size of the image
+my_face = img[y:y+h , x:x+w]
+my_face = cv.resize(my_face,(160,160))
+plt.imshow(my_face)
+my_face
+# automating the preprocessing
+class FACELOADING:
+def __init__(self,directory):
+self.directory = directory
+self.target_size = (160,160)
+self.X = []
+self.Y = []
+!pip install mtcnn
+!pip install tensorflow
+import cv2 as cv
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import numpy as np
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+# reading the image
+img = cv.imread("/content/drive/MyDrive/745e0beb-af30-4b8d-b187-
+4a22e79d760c.jpg")
+# visualizing the image in the matplotlib
+img = cv.cvtColor(img , cv.COLOR_BGR2RGB)
+plt.imshow(img)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from mtcnn.mtcnn import MTCNN
+#Object of the mtcnn
+detector = MTCNN()
+results = detector.detect_faces(img)
+# we are only concerned with the box that will give the co-ordinates of the face
+in the image
+results
+x,y,w,h = results[0]['box']
+#drawing the rectangle inside the face
+img = cv.rectangle(img ,(x,y) , (x+w , y+h),(0,0,255),30)
+plt.imshow(img)
+# extract only the face portion
+# facenet only use 160x160 size of the image
+my_face = img[y:y+h , x:x+w]
+my_face = cv.resize(my_face,(160,160))
+plt.imshow(my_face)
+my_face
+# automating the preprocessing
+class FACELOADING:
+def __init__(self,directory):
+self.directory = directory
+self.target_size = (160,160)
+self.X = []
+self.Y = []
+!pip install keras-facenet
+from keras_facenet import FaceNet
+#creating the object of facenet
+embedder = FaceNet()
+def get_embedding(face_img):
+face_img = face_img.astype('float32')
+face_img = np.expand_dims(face_img ,axis = 0 )
+yhat = embedder.embeddings(face_img)
+return yhat[0]
+
+EMBEDDED_X = []
+for img in X:
+EMBEDDED_X.append(get_embedding(img))
+EMBEDDED_X = np.asarray(EMBEDDED_X)
+EMBEDDED_X
+EMBEDDED_X[0]
+np.savez_compressed('faces_embeddings_done_4classes1.npz', EMBEDDED_X , Y)
+
+from sklearn.preprocessing import LabelEncoder
+encoder = LabelEncoder()
+encoder.fit(Y)
+Y = encoder.transform(Y)
+plt.plot(EMBEDDED_X[0])
+plt.ylabel(Y[0])
+from sklearn.model_selection import train_test_split
+X_train , X_test, Y_train , Y_test = train_test_split(EMBEDDED_X , Y , shuffle =
+True , random_state=42 )
+X_train
+X_test
+from tensorflow.keras.models import Model
+from sklearn.svm import SVC
+model = SVC(kernel='linear', probability=True)
+model.fit(X_train, Y_train)
+ypreds_train = model.predict(X_train)
+ypreds_test = model.predict(X_test)
+#checking the accuracy of the model
+from sklearn.metrics import accuracy_score
+accuracy_score(Y_train, ypreds_train)
+accuracy_score(Y_test,ypreds_test)
+# Load the test image and perform necessary preprocessing
+test_image_path = "/content/drive/MyDrive/IMG-0198.JPG" # Replace with the path
+to your test image
+test_image = cv.imread(test_image_path)
+test_image = cv.cvtColor(test_image, cv.COLOR_BGR2RGB)
+x, y, w, h = detector.detect_faces(test_image)[0]['box']
+test_image = test_image[y:y+h, x:x+w]
+test_image = cv.resize(test_image, (160, 160))
+test_embedding = get_embedding(test_image)
+test_embedding = [test_embedding]
+# Predict the class labels using the trained SVM model
+predicted_class = model.predict(test_embedding)
+# Transform the predicted class label back to the original label (person's name)
+predicted_name = encoder.inverse_transform(predicted_class)[0]
+# Predict the class probabilities using the trained SVM model
+class_probabilities = model.predict_proba(test_embedding)
+# Get the percentage probability for each class
+class_names = encoder.classes_
+class_prob_percentages = {}
+for i, class_name in enumerate(class_names):
+class_prob_percentages[class_name] = class_probabilities[0][i] * 100
+# Print the predicted name and probability percentages
+print("Predicted Name:", predicted_name)
+print("Probability Percentages:")
+for class_name, prob_percentage in class_prob_percentages.items():
+print(f"{class_name}: {prob_percentage:.2f}%")
